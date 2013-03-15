@@ -17,7 +17,7 @@ This plugin outputs log messages like
     $ grep 'keep forwarding' /var/log/td-agent/td-agent.log
     2013-03-15 10:35:06 +0900: keep forwarding tag 'fluent.info' to node 'localhost:24224' host="localhost" port=24224 weight=60
 
-You can tell the address of forwarding node easily. 
+You can tell the address of current forwarding node easily. 
 
 ## Contributing
 
