@@ -35,30 +35,31 @@ end
 describe Fluent::KeepForwardOutput do
   include_context 'keep_forward_init'
   include_context 'keep_forward_try_once'
+  before { driver.should_receive(:send_data).with(target, tag, es) } # mock
 
   describe 'keep forwarding if no problem?' do
-    before { driver.should_receive(:send_data).with(keep_node, tag, es) }
+    let(:target) { keep_node }
     it { driver.write_objects(tag, es) }
   end
 
   describe 'switch if not available?' do
     before { keep_node.available = false }
 
-    before { driver.should_receive(:send_data).with(unkeep_node, tag, es) }
+    let(:target) { unkeep_node }
     it { driver.write_objects(tag, es) }
   end
 
   describe 'switch if not included in weight_array?' do
     before { driver.instance_variable_set(:@weight_array, [unkeep_node]) }
 
-    before { driver.should_receive(:send_data).with(unkeep_node, tag, es) }
+    let(:target) { unkeep_node }
     it { driver.write_objects(tag, es) }
   end
 
   describe 'switch if send_data to keep_node raises?' do
     before { driver.stub(:send_data).with(keep_node, tag, es).and_raise(StandardError) }
 
-    before { driver.should_receive(:send_data).with(unkeep_node, tag, es) }
+    let(:target) { unkeep_node }
     it { driver.write_objects(tag, es) }
   end
 end
