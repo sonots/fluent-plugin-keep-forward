@@ -1,3 +1,5 @@
+require 'fluent/plugin/out_forward'
+
 class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   Fluent::Plugin.register_output('keep_forward', self)
 

@@ -1,8 +1,10 @@
 # fluent-plugin-keep-forward [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-keep-forward.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-keep-forward) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-keep-forward.png)](https://gemnasium.com/sonots/fluent-plugin-keep-forward)
 
+testing ruby: 1.9.2, 1.9.3, 2.0.0;  fluentd: 0.10.x
+
 ## About
 
-This is an extension of fluentd out\_forward plugin to keep fowarding log data to the same node (as much as possible) although out\_forward reselects a node everytime to send.
+This is an extension of fluentd out\_forward plugin to keep fowarding log data to the same node (as much as possible).
 
 ## Configuration
 
