@@ -29,7 +29,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         begin
           send_data(node, tag, es)
           @node[tag] = node
-          $log.info "keep forwarding tag '#{tag}' to node '#{node.name}'", :host=>node.host, :port=>node.port, :weight=>node.weight
+          # $log.info "keep forwarding tag '#{tag}' to node '#{node.name}'", :host=>node.host, :port=>node.port, :weight=>node.weight
           return
         rescue
           # for load balancing during detecting crashed servers
@@ -39,7 +39,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     end
 
     @node[tag] = nil
-    $log.info "keep forwarding tag '#{tag}' is lost"
+    # $log.info "keep forwarding tag '#{tag}' is lost"
     if error
       raise error
     else
