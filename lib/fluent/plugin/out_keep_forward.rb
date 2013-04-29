@@ -5,7 +5,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   def write_objects(tag, es)
     @node ||= {}
-    if @node[tag] and @node[tag].available? and @weight_array.include?(@node[tag])
+    if @node[tag] and @node[tag].available? # and @weight_array.include?(@node[tag])
       begin
         send_data(@node[tag], tag, es)
         return
