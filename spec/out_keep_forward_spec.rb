@@ -52,7 +52,7 @@ describe Fluent::KeepForwardOutput do
   describe 'switch if not included in weight_array?' do
     before { driver.instance_variable_set(:@weight_array, [unkeep_node]) }
 
-    let(:target) { unkeep_node }
+    let(:target) { keep_node }
     it { driver.write_objects(tag, es) }
   end
 
