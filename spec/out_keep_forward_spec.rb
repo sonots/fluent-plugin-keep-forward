@@ -15,7 +15,8 @@ shared_context 'keep_forward_init' do
   ]
   let(:tag) { 'syslog.host1' }
   let(:es)  { Object.new }
-  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::KeepForwardOutput, tag).configure(CONFIG).instance }
+  let(:config) { CONFIG }
+  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::KeepForwardOutput, tag).configure(config).instance }
 end
 
 shared_context 'keep_forward_try_once' do
@@ -49,11 +50,30 @@ describe Fluent::KeepForwardOutput do
     it { driver.write_objects(tag, es) }
   end
 
-  describe 'switch if not included in weight_array?' do
-    before { driver.instance_variable_set(:@weight_array, [unkeep_node]) }
+  describe 'not included in weight_array?' do
+    context "switch if recover true" do
+      let(:config) {
+        CONFIG + %[
+          prefer_recover true
+        ]
+      }
+      before { driver.instance_variable_set(:@weight_array, [unkeep_node]) }
 
-    let(:target) { keep_node }
-    it { driver.write_objects(tag, es) }
+      let(:target) { unkeep_node }
+      it { driver.write_objects(tag, es) }
+    end
+
+    context "not switch if recorver false" do
+      let(:config) {
+        CONFIG + %[
+          prefer_recover false
+        ]
+      }
+      before { driver.instance_variable_set(:@weight_array, [unkeep_node]) }
+
+      let(:target) { keep_node }
+      it { driver.write_objects(tag, es) }
+    end
   end
 
   describe 'switch if send_data to keep_node raises?' do

@@ -3,9 +3,11 @@ require 'fluent/plugin/out_forward'
 class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   Fluent::Plugin.register_output('keep_forward', self)
 
+  config_param :prefer_recover, :bool, :default => true
+
   def write_objects(tag, es)
     @node ||= {}
-    if @node[tag] and @node[tag].available? # and @weight_array.include?(@node[tag])
+    if @node[tag] and @node[tag].available? and (!@prefer_recover or @weight_array.include?(@node[tag]))
       begin
         send_data(@node[tag], tag, es)
         return

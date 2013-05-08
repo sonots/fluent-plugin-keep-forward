@@ -8,16 +8,13 @@ This is an extension of fluentd out\_forward plugin to keep fowarding log data t
 
 ## Configuration
 
-Exactly same with out\_forward plugin. See http://docs.fluentd.org/articles/out_forward
+Basically same with out\_forward plugin. See http://docs.fluentd.org/articles/out_forward
 
-## Log
+## Additional Parameters
 
-This plugin outputs log messages like
+* prefer_recover
 
-    $ grep 'keep forwarding' /var/log/td-agent/td-agent.log
-    2013-03-15 10:35:06 +0900: keep forwarding tag 'fluent.info' to node 'localhost:24224' host="localhost" port=24224 weight=60
-
-You can tell the address of current forwarding node easily. 
+    Switch to a recovered node from standby nodes or less weighted nodes. Default is `true`.
 
 ## Contributing
 
