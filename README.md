@@ -6,15 +6,15 @@ testing ruby: 1.9.2, 1.9.3, 2.0.0;  fluentd: 0.10.x
 
 This is an extension of fluentd out\_forward plugin to keep fowarding log data to the same node (as much as possible).
 
-## Configuration
+## Parameters
 
 Basically same with out\_forward plugin. See http://docs.fluentd.org/articles/out_forward
 
-## Additional Parameters
+Following parameters are additionally available: 
 
-* prefer_recover
+- prefer_recover
 
-    Switch to a recovered node from standby nodes or less weighted nodes. Default is `true`.
+    Connect to a recovered node back from standby nodes or less weighted nodes. Default is `true`.
 
 ## Contributing
 
