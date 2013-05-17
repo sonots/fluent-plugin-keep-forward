@@ -14,7 +14,7 @@ Following parameters are additionally available:
 
 - prefer_recover
 
-    Connect to a recovered node back from standby nodes or less weighted nodes. Default is `true`.
+    Switch connection to a recovered node from standby nodes or less weighted nodes. This would break keepability, but usally should set to be `true`. Default is `true`.
 
 ## Contributing
 
