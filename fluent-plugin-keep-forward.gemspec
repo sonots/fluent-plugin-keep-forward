@@ -3,8 +3,8 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "fluent-plugin-keep-forward"
-  s.version     = "0.0.4"
-  s.authors     = ["Naotoshi SEO"]
+  s.version     = "0.1.0"
+  s.authors     = ["Naotoshi Seo"]
   s.email       = ["sonots@gmail.com"]
   s.homepage    = "https://github.com/sonots/fluent-plugin-keep-forward"
   s.summary     = "Fluentd plugin to keep forwarding to a node"
