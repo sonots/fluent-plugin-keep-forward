@@ -63,9 +63,8 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   # Override for keepalive
   def send_data(node, tag, chunk)
-    if @sock[node] and (!@sock_expired_at[node] or Time.now < @sock_expired_at[node])
-      sock = @sock[node]
-    else
+    sock, sock_expired_at = get_sock[node], get_sock_expired_at[node]
+    if !sock or (sock_expired_at and Time.now >= sock_expired_at)
       sock = reconnect(node)
     end
 
@@ -73,6 +72,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       sock_write(sock, tag, chunk)
       node.heartbeat(false)
     rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
+      $log.warn "out_keep_forward: #{e.class} #{e.message}"
       sock = reconnect(node)
       retry
     end
@@ -80,8 +80,10 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   def reconnect(node)
     if @keepalive
-      @sock[node].close rescue IOError if @sock[node]
-      @sock[node] = nil
+      if sock = get_sock[node]
+        sock.close rescue IOError
+      end
+      get_sock[node] = nil
     end
 
     sock = connect(node)
@@ -92,8 +94,8 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, opt)
 
     if @keepalive
-      @sock[node] = sock
-      @sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
+      get_sock[node] = sock
+      get_sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
     end
 
     sock
@@ -121,5 +123,13 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
     # writeRawBody(packed_es)
     chunk.write_to(sock)
+  end
+
+  def get_sock
+    @sock[Thread.current.object_id] ||= {}
+  end
+
+  def get_sock_expired_at
+    @sock_expired_at[Thread.current.object_id] ||= {}
   end
 end
