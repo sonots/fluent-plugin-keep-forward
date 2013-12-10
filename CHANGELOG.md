@@ -1,3 +1,9 @@
+## 0.1.1
+
+Changes:
+
+* Change default of `keepalive` option to `false`
+
 ## 0.1.0
 
 Enhancements:
