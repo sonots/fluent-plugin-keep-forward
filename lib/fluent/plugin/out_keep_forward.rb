@@ -7,12 +7,40 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   config_param :keepalive, :bool, :default => true
   config_param :keepalive_time, :time, :default => nil # infinite
 
+  # for test
+  attr_accessor :watcher_interval
+
   def configure(conf)
     super
 
     @node = {}
     @sock = {}
     @sock_expired_at = {}
+    @mutex = {}
+    @watcher_interval = 1
+  end
+
+  def start
+    super
+    start_watcher
+  end
+
+  def shutdown
+    super
+    stop_watcher
+  end
+
+  def start_watcher
+    if @keepalive and @keepalive_time
+      @watcher = Thread.new(&method(:watch_keepalive_time))
+    end
+  end
+
+  def stop_watcher
+    if @watcher
+      @watcher.terminate
+      @watcher.join
+    end
   end
 
   # Override
@@ -63,29 +91,24 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   # Override for keepalive
   def send_data(node, tag, chunk)
-    sock, sock_expired_at = get_sock[node], get_sock_expired_at[node]
-    if !sock or (sock_expired_at and Time.now >= sock_expired_at)
-      sock = reconnect(node)
-    end
+    get_mutex(node).synchronize do
+      sock = get_sock[node]
+      unless sock
+        sock = reconnect(node)
+      end
 
-    begin
-      sock_write(sock, tag, chunk)
-      node.heartbeat(false)
-    rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
-      $log.warn "out_keep_forward: #{e.class} #{e.message}"
-      sock = reconnect(node)
-      retry
+      begin
+        sock_write(sock, tag, chunk)
+        node.heartbeat(false)
+      rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
+        $log.warn "out_keep_forward: #{e.class} #{e.message}"
+        sock = reconnect(node)
+        retry
+      end
     end
   end
 
   def reconnect(node)
-    if @keepalive
-      if sock = get_sock[node]
-        sock.close rescue IOError
-      end
-      get_sock[node] = nil
-    end
-
     sock = connect(node)
     opt = [1, @send_timeout.to_i].pack('I!I!')  # { int l_onoff; int l_linger; }
     sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER, opt)
@@ -123,6 +146,31 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
     # writeRawBody(packed_es)
     chunk.write_to(sock)
+  end
+
+  # watcher thread callback
+  def watch_keepalive_time
+    while true
+      sleep @watcher_interval
+      thread_ids = @sock.keys
+      thread_ids.each do |thread_id|
+        @sock[thread_id].each do |node, sock|
+          @mutex[thread_id][node].synchronize do
+            next unless sock_expired_at = @sock_expired_at[thread_id][node]
+            next unless Time.now >= sock_expired_at
+            sock.close rescue IOError if sock
+            @sock[thread_id][node] = nil
+            @sock_expired_at[thread_id][node] = nil
+          end
+        end
+      end
+    end
+  end
+
+  def get_mutex(node)
+    thread_id = Thread.current.object_id
+    @mutex[thread_id] ||= {}
+    @mutex[thread_id][node] ||= Mutex.new
   end
 
   def get_sock

@@ -22,16 +22,21 @@ end
 shared_context 'keep_forward_try_once' do
   before do
     # stub connection
-    stub_sock = Object.new
+    stub_sock = StringIO.new
     driver.stub(:connect).and_return { stub_sock }
     stub_sock.stub(:setsockopt)
     driver.stub(:sock_write).and_return { nil }
     Fluent::ForwardOutput::Node.any_instance.stub(:heartbeat).and_return { nil }
     # simpler version of Fluent::ForwardOutput#start method
+    driver.watcher_interval = 0
+    driver.start_watcher
     driver.instance_variable_set(:@rand_seed, Random.new.seed)
     driver.send(:rebuild_weight_array)
     driver.instance_variable_set(:@rr, 0)
     driver.write_objects(tag, chunk)
+  end
+  after do
+    driver.stop_watcher
   end
   let!(:keep_node) { driver.instance_variable_get(:@node)[tag] }
   let!(:another_node) { (driver.instance_variable_get(:@nodes) - [keep_node]).first }
@@ -125,18 +130,18 @@ describe Fluent::KeepForwardOutput do
     let(:config) { CONFIG + %[keepalive true\nkeepalive_time 30] }
     before { Delorean.jump 30 }
     it_should_behave_like 'keep_node_available' do
-      before { driver.should_receive(:reconnect) }
+      before { sleep 1; driver.should_receive(:reconnect) }
     end
     it_should_behave_like 'keep_node_not_available' do
-      before { driver.should_receive(:reconnect) }
+      before { sleep 1; driver.should_receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover true' do
       let(:config) { CONFIG + %[prefer_recover true\nkeepalive true\nkeepalive_time 30] }
-      before { driver.should_receive(:reconnect) }
+      before { sleep 1; driver.should_receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover false' do
       let(:config) { CONFIG + %[prefer_recover false\nkeepalive true\nkeepalive_time 30] }
-      before { driver.should_receive(:reconnect) }
+      before { sleep 1; driver.should_receive(:reconnect) }
     end
   end
 end
