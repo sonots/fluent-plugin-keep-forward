@@ -4,7 +4,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   Fluent::Plugin.register_output('keep_forward', self)
 
   config_param :prefer_recover, :bool, :default => true
-  config_param :keepalive, :bool, :default => true
+  config_param :keepalive, :bool, :default => false
   config_param :keepalive_time, :time, :default => nil # infinite
 
   # for test

@@ -14,7 +14,7 @@ Following parameters are additionally available:
 
 - keepalive (bool)
 
-    Keepalive connection. Default is `true`.
+    Keepalive connection. Default is `false`.
 
 - keepalive_time (time)
 
