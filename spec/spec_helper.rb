@@ -7,6 +7,7 @@ Bundler.require(:default, :test)
 require 'fluent/test'
 require 'rspec'
 require 'pry'
+require 'delorean'
 
 $TESTING=true
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')

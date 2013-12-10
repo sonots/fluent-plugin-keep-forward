@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Naotoshi SEO"]
   s.email       = ["sonots@gmail.com"]
   s.homepage    = "https://github.com/sonots/fluent-plugin-keep-forward"
-  s.summary     = "out_foward extension to keep forwarding to a node"
+  s.summary     = "Fluentd plugin to keep forwarding to a node"
   s.description = s.summary
 
   s.rubyforge_project = "fluent-plugin-keep-forward"
@@ -21,4 +21,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
   s.add_development_dependency "pry"
+  s.add_development_dependency "pry-nav"
+  s.add_development_dependency "delorean"
 end
