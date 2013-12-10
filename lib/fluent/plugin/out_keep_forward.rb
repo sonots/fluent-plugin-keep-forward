@@ -72,13 +72,18 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     begin
       sock_write(sock, tag, chunk)
       node.heartbeat(false)
-    rescue Errno::EPIPE => e
+    rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
       sock = reconnect(node)
       retry
     end
   end
 
   def reconnect(node)
+    if @keepalive
+      @sock[node].close rescue IOError if @sock[node]
+      @sock[node] = nil
+    end
+
     sock = connect(node)
     opt = [1, @send_timeout.to_i].pack('I!I!')  # { int l_onoff; int l_linger; }
     sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_LINGER, opt)
@@ -87,7 +92,6 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, opt)
 
     if @keepalive
-      @sock[node].close if @sock[node]
       @sock[node] = sock
       @sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
     end
