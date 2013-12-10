@@ -18,7 +18,7 @@ Following parameters are additionally available:
 
 - keepalive_time (time)
 
-    Keepalive expired time. Default is nil (which means as long as possible).
+    Keepalive expired time. Default is nil (which means to keep connection as long as possible).
 
 - prefer_recover (bool)
 
