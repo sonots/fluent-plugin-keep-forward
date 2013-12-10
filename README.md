@@ -4,7 +4,7 @@ testing ruby: 1.9.2, 1.9.3, 2.0.0;  fluentd: 0.10.x
 
 ## About
 
-This is an extension of fluentd out\_forward plugin to keep fowarding log data to the same node (as much as possible).
+This is an extension of fluentd out\_forward plugin to keep fowarding log data to the same node (as long as possible).
 
 ## Parameters
 
@@ -12,7 +12,15 @@ Basically same with out\_forward plugin. See http://docs.fluentd.org/articles/ou
 
 Following parameters are additionally available: 
 
-- prefer_recover
+- keepalive (bool)
+
+    Keepalive connection. Default is `true`.
+
+- keepalive_time (time)
+
+    Keepalive expired time. Default is nil (which means as long as possible).
+
+- prefer_recover (bool)
 
     Switch connection to a recovered node from standby nodes or less weighted nodes. Default is `true`.
 
@@ -24,6 +32,10 @@ Following parameters are additionally available:
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new [Pull Request](../../pull/new/master)
 
+## ChangeLog
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
+
 ## Copyright
 
-Copyright (c) 2013 Naotoshi SEO. See [LICENSE](LICENSE) for details.
+Copyright (c) 2013 Naotoshi Seo. See [LICENSE](LICENSE) for details.
