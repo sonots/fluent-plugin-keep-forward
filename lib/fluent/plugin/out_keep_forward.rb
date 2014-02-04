@@ -3,6 +3,11 @@ require 'fluent/plugin/out_forward'
 class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   Fluent::Plugin.register_output('keep_forward', self)
 
+  # To support log_level option implemented by Fluentd v0.10.43
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
   config_param :prefer_recover, :bool, :default => true
   config_param :keepalive, :bool, :default => false
   config_param :keepalive_time, :time, :default => nil # infinite
@@ -101,7 +106,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         sock_write(sock, tag, chunk)
         node.heartbeat(false)
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
-        $log.warn "out_keep_forward: #{e.class} #{e.message}"
+        log.warn "out_keep_forward: #{e.class} #{e.message}"
         sock = reconnect(node)
         retry
       end
