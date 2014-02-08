@@ -1,4 +1,4 @@
-# fluent-plugin-keep-forward [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-keep-forward.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-keep-forward) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-keep-forward.png)](https://gemnasium.com/sonots/fluent-plugin-keep-forward)
+# fluent-plugin-keep-forward, a plugin for [Fluentd](http://fluentd.org) [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-keep-forward.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-keep-forward) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-keep-forward.png)](https://gemnasium.com/sonots/fluent-plugin-keep-forward)
 
 testing ruby: 1.9.2, 1.9.3, 2.0.0;  fluentd: 0.10.x
 
