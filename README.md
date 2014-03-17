@@ -20,6 +20,12 @@ Following parameters are additionally available:
 
     Keepalive expired time. Default is nil (which means to keep connection as long as possible).
 
+- keepforward
+
+    `one` for keep forwarding all data to the one node.
+    `tag` for keep forwarding data with the same tag to the same node.
+    Default is `one`.
+
 - prefer_recover (bool)
 
     Switch connection to a recovered node from standby nodes or less weighted nodes. Default is `true`.

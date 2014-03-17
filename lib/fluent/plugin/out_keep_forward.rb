@@ -11,6 +11,16 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   config_param :prefer_recover, :bool, :default => true
   config_param :keepalive, :bool, :default => false
   config_param :keepalive_time, :time, :default => nil # infinite
+  config_param :keepforward, :default => :one do |val|
+    case val.downcase
+    when 'one'
+      :one
+    when 'tag'
+      :tag
+    else
+      raise ConfigError, "out_keep_forward keepforward should be 'one' or 'tag'"
+    end
+  end
 
   # for test
   attr_accessor :watcher_interval
@@ -23,6 +33,18 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     @sock_expired_at = {}
     @mutex = {}
     @watcher_interval = 1
+  end
+
+  def get_node(tag)
+    @node[keepforward(tag)]
+  end
+
+  def keepforward(tag)
+    @keepforward == :one ? :one : tag
+  end
+
+  def cache_node(tag, node)
+    @node[keepforward(tag)] = node
   end
 
   def start
@@ -52,22 +74,28 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   def write_objects(tag, chunk)
     return if chunk.empty?
     error = nil
-    node = @node[tag]
+    node = get_node(tag)
 
     if node and node.available? and (!@prefer_recover or @weight_array.include?(node))
       begin
         send_data(node, tag, chunk)
         return
       rescue
-        weight_send_data(tag, chunk)
+        node = weight_send_data(tag, chunk, error_node = node)
+        cache_node(tag, node)
       end
     else
-      weight_send_data(tag, chunk)
+      node = weight_send_data(tag, chunk, error_node = node)
+      cache_node(tag, node)
     end
   end
 
-  def weight_send_data(tag, chunk)
+  def weight_send_data(tag, chunk, error_node = nil)
     error = nil
+
+    if error_node
+      sock_close(error_node) if @keepalive and @keepforward == :one
+    end
 
     wlen = @weight_array.length
     wlen.times do
@@ -77,8 +105,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       if node.available?
         begin
           send_data(node, tag, chunk)
-          @node[tag] = node
-          return
+          return node
         rescue
           # for load balancing during detecting crashed servers
           error = $!  # use the latest error
@@ -86,7 +113,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       end
     end
 
-    @node[tag] = nil
+    cache_node(tag, nil)
     if error
       raise error
     else
@@ -108,6 +135,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         node.heartbeat(false)
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
         log.warn "out_keep_forward: send_data failed #{e.class} #{e.message}, try to reconnect", :host=>node.host, :port=>node.port
+        sock.close rescue IOError
         sock = reconnect(node)
         cache_sock(node, sock) if @keepalive
         retry
@@ -166,6 +194,15 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
           end
         end
       end
+    end
+  end
+
+  def sock_close(node)
+    get_mutex(node).synchronize do
+      sock = get_sock[node]
+      sock.close rescue IOError if sock
+      get_sock[node] = nil
+      get_sock_expired_at[node] = nil
     end
   end
 
