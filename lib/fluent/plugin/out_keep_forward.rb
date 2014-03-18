@@ -97,9 +97,10 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   # Override for keepalive
   def send_data(node, tag, chunk)
     get_mutex(node).synchronize do
-      sock = get_sock[node]
+      sock = get_sock[node] if @keepalive
       unless sock
         sock = reconnect(node)
+        cache_sock(node, sock) if @keepalive
       end
 
       begin
@@ -108,6 +109,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
         log.warn "out_keep_forward: send_data failed #{e.class} #{e.message}, try to reconnect", :host=>node.host, :port=>node.port
         sock = reconnect(node)
+        cache_sock(node, sock) if @keepalive
         retry
       end
     end
@@ -120,11 +122,6 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
     opt = [@send_timeout.to_i, 0].pack('L!L!')  # struct timeval
     sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, opt)
-
-    if @keepalive
-      get_sock[node] = sock
-      get_sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
-    end
 
     sock
   end
@@ -176,6 +173,11 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     thread_id = Thread.current.object_id
     @mutex[thread_id] ||= {}
     @mutex[thread_id][node] ||= Mutex.new
+  end
+
+  def cache_sock(node, sock)
+    get_sock[node] = sock
+    get_sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
   end
 
   def get_sock
