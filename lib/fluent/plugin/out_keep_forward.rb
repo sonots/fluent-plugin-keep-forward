@@ -124,7 +124,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   # Override for keepalive
   def send_data(node, tag, chunk)
     get_mutex(node).synchronize do
-      sock = get_sock[node] if @keepalive
+      sock = get_sock[node]
       unless sock
         sock = reconnect(node)
         cache_sock(node, sock) if @keepalive
@@ -139,6 +139,8 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         sock = reconnect(node)
         cache_sock(node, sock) if @keepalive
         retry
+      ensure
+        sock.close if sock and !@keepalive
       end
     end
   end
