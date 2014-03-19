@@ -1,3 +1,14 @@
+## 0.1.3 (2014/03/19)
+
+Enhancement
+
+* Enrich warn log message
+* Add `keepforward` option
+
+Fixes
+
+* Explicitly close socket the case of non-keepalive
+
 ## 0.1.2
 
 Enhancement:
