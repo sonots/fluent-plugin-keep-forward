@@ -81,21 +81,15 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         send_data(node, tag, chunk)
         return
       rescue
-        node = weight_send_data(tag, chunk, error_node = node)
-        cache_node(tag, node)
+        weight_send_data(tag, chunk)
       end
     else
-      node = weight_send_data(tag, chunk, error_node = node)
-      cache_node(tag, node)
+      weight_send_data(tag, chunk)
     end
   end
 
-  def weight_send_data(tag, chunk, error_node = nil)
+  def weight_send_data(tag, chunk)
     error = nil
-
-    if error_node
-      sock_close(error_node) if @keepalive and @keepforward == :one
-    end
 
     wlen = @weight_array.length
     wlen.times do
@@ -105,7 +99,8 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       if node.available?
         begin
           send_data(node, tag, chunk)
-          return node
+          cache_node(tag, node)
+          return
         rescue
           # for load balancing during detecting crashed servers
           error = $!  # use the latest error
@@ -123,8 +118,9 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   # Override for keepalive
   def send_data(node, tag, chunk)
+    sock = nil
     get_mutex(node).synchronize do
-      sock = get_sock[node]
+      sock = get_sock[node] if @keepalive
       unless sock
         sock = reconnect(node)
         cache_sock(node, sock) if @keepalive
@@ -133,14 +129,18 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       begin
         sock_write(sock, tag, chunk)
         node.heartbeat(false)
+        log.debug "out_keep_forward: write to", :host=>node.host, :port=>node.port
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
-        log.warn "out_keep_forward: send_data failed #{e.class} #{e.message}, try to reconnect", :host=>node.host, :port=>node.port
-        sock.close rescue IOError
-        sock = reconnect(node)
-        cache_sock(node, sock) if @keepalive
-        retry
+        log.warn "out_keep_forward: send_data failed #{e.class} #{e.message}", :host=>node.host, :port=>node.port
+        if @keepalive
+          sock.close rescue IOError
+          cache_sock(node, nil)
+        end
+        raise e
       ensure
-        sock.close if sock and !@keepalive
+        unless @keepalive
+          sock.close if sock
+        end
       end
     end
   end
@@ -193,18 +193,10 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
             sock.close rescue IOError if sock
             @sock[thread_id][node] = nil
             @sock_expired_at[thread_id][node] = nil
+            log.debug "out_keep_forward: keepalive connection closed", :host=>node.host, :port=>node.port, :thread_id=>thread_id
           end
         end
       end
-    end
-  end
-
-  def sock_close(node)
-    get_mutex(node).synchronize do
-      sock = get_sock[node]
-      sock.close rescue IOError if sock
-      get_sock[node] = nil
-      get_sock_expired_at[node] = nil
     end
   end
 
@@ -215,8 +207,14 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   end
 
   def cache_sock(node, sock)
-    get_sock[node] = sock
-    get_sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
+    if sock
+      get_sock[node] = sock
+      get_sock_expired_at[node] = Time.now + @keepalive_time if @keepalive_time
+      log.info "out_keep_forward: keepalive connection opened", :host=>node.host, :port=>node.port
+    else
+      get_sock[node] = nil
+      get_sock_expired_at[node] = nil
+    end
   end
 
   def get_sock

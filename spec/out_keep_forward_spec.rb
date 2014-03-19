@@ -86,7 +86,7 @@ describe Fluent::KeepForwardOutput do
       before { driver.should_receive(:send_data).with(keep_node, tag, chunk) }
     end
     it_should_behave_like 'error_occurs' do
-      before { driver.stub(:weight_send_data).with(tag, chunk, keep_node) } # re-call weight_send_data
+      before { driver.stub(:weight_send_data).with(tag, chunk) } # re-call weight_send_data
     end
   end
 
