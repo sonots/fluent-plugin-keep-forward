@@ -1,3 +1,9 @@
+## 0.1.4 (2014/03/20)
+
+Fixes
+
+* More explicitly close socket the case of non-keepalive
+
 ## 0.1.3 (2014/03/19)
 
 Enhancement
