@@ -1,3 +1,9 @@
+## 0.1.5 (2014/03/28)
+
+Enhancements:
+
+* Add `heartbeat_type none` to disable heartbeat
+
 ## 0.1.4 (2014/03/20)
 
 Fixes
