@@ -18,7 +18,19 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     when 'tag'
       :tag
     else
-      raise ConfigError, "out_keep_forward keepforward should be 'one' or 'tag'"
+      raise ::Fluent::ConfigError, "out_keep_forward keepforward should be 'one' or 'tag'"
+    end
+  end
+  config_param :heartbeat_type, :default => :udp do |val|
+    case val.downcase
+    when 'tcp'
+      :tcp
+    when 'udp'
+      :udp
+    when 'none' # custom
+      :none
+    else
+      raise ::Fluent::ConfigError, "forward output heartbeat type should be 'tcp' or 'udp', or 'none'"
     end
   end
 
@@ -27,6 +39,10 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
 
   def configure(conf)
     super
+
+    if @heartbeat_type == :none
+      @nodes = @nodes.map {|node| NonHeartbeatNode.new(node) }
+    end
 
     @node = {}
     @sock = {}
@@ -53,7 +69,11 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
   end
 
   def shutdown
-    super
+    @finished = true
+    @loop.watchers.each {|w| w.detach }
+    @loop.stop unless @heartbeat_type == :none # custom
+    @thread.join
+    @usock.close if @usock
     stop_watcher
   end
 
@@ -67,6 +87,37 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     if @watcher
       @watcher.terminate
       @watcher.join
+    end
+  end
+
+  # Override to disable heartbeat
+  def run
+    unless @heartbeat_type == :none
+      super
+    end
+  end
+
+  # Delegate to Node instance disabling heartbeat
+  class NonHeartbeatNode
+    extend Forwardable
+    attr_reader :node
+    def_delegators :@node, :standby?, :resolved_host, :resolve_dns!, :to_msgpack,
+      :name, :host, :port, :weight, :weight=, :standby=, :available=, :sockaddr
+
+    def initialize(node)
+      @node = node
+    end
+
+    def available?
+      true
+    end
+
+    def tick
+      false
+    end
+
+    def heartbeat(detect=true)
+      true
     end
   end
 
@@ -135,6 +186,8 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         if @keepalive
           sock.close rescue IOError
           cache_sock(node, nil)
+          cache_node(tag, nil)
+          rebuild_weight_array
         end
         raise e
       ensure
