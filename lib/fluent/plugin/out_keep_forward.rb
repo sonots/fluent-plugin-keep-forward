@@ -132,9 +132,11 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         send_data(node, tag, chunk)
         return
       rescue
+        rebuild_weight_array if @heartbeat_type == :none
         weight_send_data(tag, chunk)
       end
     else
+      rebuild_weight_array if @heartbeat_type == :none
       weight_send_data(tag, chunk)
     end
   end
@@ -186,8 +188,6 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         if @keepalive
           sock.close rescue IOError
           cache_sock(node, nil)
-          cache_node(tag, nil)
-          rebuild_weight_array
         end
         raise e
       ensure
