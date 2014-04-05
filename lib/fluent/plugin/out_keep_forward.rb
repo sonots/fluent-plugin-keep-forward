@@ -17,8 +17,10 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       :one
     when 'tag'
       :tag
+    when 'thread'
+      :thread
     else
-      raise ::Fluent::ConfigError, "out_keep_forward keepforward should be 'one' or 'tag'"
+      raise ::Fluent::ConfigError, "out_keep_forward keepforward should be 'one' or 'thread', or 'tag'"
     end
   end
   config_param :heartbeat_type, :default => :udp do |val|
@@ -49,18 +51,6 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     @sock_expired_at = {}
     @mutex = {}
     @watcher_interval = 1
-  end
-
-  def get_node(tag)
-    @node[keepforward(tag)]
-  end
-
-  def keepforward(tag)
-    @keepforward == :one ? :one : tag
-  end
-
-  def cache_node(tag, node)
-    @node[keepforward(tag)] = node
   end
 
   def start
@@ -251,6 +241,25 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
         end
       end
     end
+  end
+
+  def keepforward(tag)
+    case @keepforward
+    when :tag
+      tag
+    when :thread
+      Thread.current.object_id
+    else # :one
+      :one
+    end
+  end
+
+  def cache_node(tag, node)
+    @node[keepforward(tag)] = node
+  end
+
+  def get_node(tag)
+    @node[keepforward(tag)]
   end
 
   def get_mutex(node)

@@ -28,6 +28,7 @@ Following parameters are additionally available:
 - keepforward
 
     `one` for keep forwarding all data to the one node.
+    `thread` for keep forwarding to the different node in each thread.
     `tag` for keep forwarding data with the same tag to the same node.
     Default is `one`.
 
