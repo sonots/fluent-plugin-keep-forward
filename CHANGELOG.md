@@ -1,3 +1,9 @@
+## 0.1.7 (2014/04/06)
+
+Enhancements:
+
+* Add `keepforward thread` option
+
 ## 0.1.6 (2014/03/28)
 
 Enhancements:
