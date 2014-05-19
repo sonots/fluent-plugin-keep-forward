@@ -92,7 +92,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     extend Forwardable
     attr_reader :node
     def_delegators :@node, :standby?, :resolved_host, :resolve_dns!, :to_msgpack,
-      :name, :host, :port, :weight, :weight=, :standby=, :available=, :sockaddr
+      :name, :host, :port, :weight, :weight=, :standby=, :sockaddr
 
     def initialize(node)
       @node = node
