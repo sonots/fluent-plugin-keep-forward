@@ -23,10 +23,10 @@ shared_context 'keep_forward_try_once' do
   before do
     # stub connection
     stub_sock = StringIO.new
-    driver.stub(:connect).and_return { stub_sock }
-    stub_sock.stub(:setsockopt)
-    driver.stub(:sock_write).and_return { nil }
-    Fluent::ForwardOutput::Node.any_instance.stub(:heartbeat).and_return { nil }
+    allow(driver).to receive(:connect) { stub_sock }
+    allow(stub_sock). to receive(:setsockopt)
+    allow(driver).to receive(:sock_write) { nil }
+    allow_any_instance_of(Fluent::ForwardOutput::Node).to receive(:heartbeat) { nil }
     # simpler version of Fluent::ForwardOutput#start method
     driver.watcher_interval = 0
     driver.start_watcher
@@ -64,7 +64,7 @@ shared_context "prefer_recover true" do
 end
 
 shared_examples "error_occurs" do
-  before { driver.stub(:send_data).with(keep_node, tag, chunk).and_raise(StandardError) }
+  before { allow(driver).to receive(:send_data) {|keep_node, tag, chunk| raise StandardError } }
   it { driver.write_objects(tag, chunk) }
 end
 
@@ -74,55 +74,55 @@ describe Fluent::KeepForwardOutput do
 
   describe "keep_node" do
     it_should_behave_like 'keep_node_available' do
-      before { driver.should_receive(:send_data).with(keep_node, tag, chunk) }
+      before { expect(driver).to receive(:send_data).with(keep_node, tag, chunk) }
     end
     it_should_behave_like 'keep_node_not_available' do
-      before { driver.should_receive(:send_data).with(another_node, tag, chunk) }
+      before { expect(driver).to receive(:send_data).with(another_node, tag, chunk) }
     end
     it_should_behave_like 'prefer_recover true' do
-      before { driver.should_receive(:send_data).with(another_node, tag, chunk) }
+      before { expect(driver).to receive(:send_data).with(another_node, tag, chunk) }
     end
     it_should_behave_like 'prefer_recover false' do
-      before { driver.should_receive(:send_data).with(keep_node, tag, chunk) }
+      before { expect(driver).to receive(:send_data).with(keep_node, tag, chunk) }
     end
     it_should_behave_like 'error_occurs' do
-      before { driver.stub(:weight_send_data).with(tag, chunk) } # re-call weight_send_data
+      before { allow(driver).to receive(:weight_send_data).with(tag, chunk) } # re-call weight_send_data
     end
   end
 
   describe "keepalive false" do
     let(:config) { CONFIG + %[keepalive false] }
     it_should_behave_like 'keep_node_available' do
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
     it_should_behave_like 'keep_node_not_available' do
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover true' do
       let(:config) { CONFIG + %[prefer_recover true\nkeepalive false] }
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover false' do
       let(:config) { CONFIG + %[prefer_recover false\nkeepalive false] }
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
   end
 
   describe "keepalive true" do
     let(:config) { CONFIG + %[keepalive true] }
     it_should_behave_like 'keep_node_available' do
-      before { driver.should_not_receive(:reconnect) }
+      before { expect(driver).not_to receive(:reconnect) }
     end
     it_should_behave_like 'keep_node_not_available' do
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover true' do
       let(:config) { CONFIG + %[prefer_recover true\nkeepalive true] }
-      before { driver.should_receive(:reconnect) }
+      before { expect(driver).to receive(:reconnect) }
     end
     it_should_behave_like 'prefer_recover false' do
       let(:config) { CONFIG + %[prefer_recover false\nkeepalive true] }
-      before { driver.should_not_receive(:reconnect) }
+      before { expect(driver).not_to receive(:reconnect) }
     end
   end
 
@@ -130,7 +130,7 @@ describe Fluent::KeepForwardOutput do
     let(:config) { CONFIG + %[keepalive true\nkeepalive_time 30] }
     before { Delorean.jump 30 }
     it_should_behave_like 'keep_node_available' do
-      before { sleep 1; driver.should_receive(:reconnect) }
+      before { sleep 1; expect(driver).to receive(:reconnect) }
     end
     pending "fix RumtimeError: can't add a new key into hash during iteration"
     #it_should_behave_like 'keep_node_not_available' do
@@ -142,7 +142,7 @@ describe Fluent::KeepForwardOutput do
     #end
     it_should_behave_like 'prefer_recover false' do
       let(:config) { CONFIG + %[prefer_recover false\nkeepalive true\nkeepalive_time 30] }
-      before { sleep 1; driver.should_receive(:reconnect) }
+      before { sleep 1; expect(driver).to receive(:reconnect) }
     end
   end
 
@@ -152,10 +152,10 @@ describe Fluent::KeepForwardOutput do
 
     # nodes are always available because heartbeat is off
     it_should_behave_like 'keep_node_available' do
-      before { driver.should_receive(:send_data).with(keep_node, tag, chunk) }
+      before { expect(driver).to receive(:send_data).with(keep_node, tag, chunk) }
     end
     it_should_behave_like 'error_occurs' do
-      before { driver.stub(:weight_send_data).with(tag, chunk) } # re-call weight_send_data
+      before { allow(driver).to receive(:weight_send_data).with(tag, chunk) } # re-call weight_send_data
     end
   end
 end
