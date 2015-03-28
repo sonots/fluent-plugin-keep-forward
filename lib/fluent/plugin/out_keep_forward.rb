@@ -172,7 +172,7 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       begin
         sock_write(sock, tag, chunk)
         node.heartbeat(false)
-        log.debug "out_keep_forward: write to", :host=>node.host, :port=>node.port
+        log.debug "out_keep_forward: write #{tag} to", :host=>node.host, :port=>node.port
       rescue Errno::EPIPE, Errno::ECONNRESET, Errno::ECONNABORTED, Errno::ETIMEDOUT => e
         log.warn "out_keep_forward: send_data failed #{e.class} #{e.message}", :host=>node.host, :port=>node.port
         if @keepalive
