@@ -1,3 +1,9 @@
+## 0.1.8 (2015/03/29)
+
+Enhancements:
+
+* Enrich a debug log a bit
+
 ## 0.1.7 (2014/04/06)
 
 Enhancements:
