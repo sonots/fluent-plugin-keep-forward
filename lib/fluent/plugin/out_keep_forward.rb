@@ -8,6 +8,14 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     define_method("log") { $log }
   end
 
+  # For fluentd v0.12.16 or earlier
+  class << self
+    unless method_defined?(:desc)
+      def desc(description)
+      end
+    end
+  end
+
   desc "Switch connection to a recovered node from standby nodes or less weighted nodes."
   config_param :prefer_recover, :bool, :default => true
   desc "Keepalive connection."
