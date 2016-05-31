@@ -8,9 +8,28 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
     define_method("log") { $log }
   end
 
+  # For fluentd v0.12.16 or earlier
+  class << self
+    unless method_defined?(:desc)
+      def desc(description)
+      end
+    end
+  end
+
+  desc "Switch connection to a recovered node from standby nodes or less weighted nodes."
   config_param :prefer_recover, :bool, :default => true
+  desc "Keepalive connection."
   config_param :keepalive, :bool, :default => false
-  config_param :keepalive_time, :time, :default => nil # infinite
+  desc <<-DESC
+Keepalive expired time.
+Default is nil (which means to keep connection as long as possible).
+DESC
+  config_param :keepalive_time, :time, :default => nil
+  desc <<-DESC
+The transport protocol to use for heartbeats.
+The default is “udp”, but you can select “tcp” as well.
+Furthermore, in keep_forward, you can also select "none" to disable heartbeat.
+DESC
   config_param :keepforward, :default => :one do |val|
     case val.downcase
     when 'one'
@@ -23,6 +42,11 @@ class Fluent::KeepForwardOutput < Fluent::ForwardOutput
       raise ::Fluent::ConfigError, "out_keep_forward keepforward should be 'one' or 'thread', or 'tag'"
     end
   end
+  desc <<-DESC
+The transport protocol to use for heartbeats.
+The default is “udp”, but you can select “tcp” as well.
+Furthermore, in keep_forward, you can also select "none" to disable heartbeat.
+DESC
   config_param :heartbeat_type, :default => :udp do |val|
     case val.downcase
     when 'tcp'
