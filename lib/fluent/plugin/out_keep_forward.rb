@@ -224,6 +224,9 @@ DESC
   end
 
   def sock_write(sock, tag, chunk)
+    oldsync = sock.sync
+    sock.sync = false
+
     # beginArray(2)
     sock.write FORWARD_HEADER
 
@@ -245,6 +248,10 @@ DESC
 
     # writeRawBody(packed_es)
     chunk.write_to(sock)
+
+  ensure
+    sock.sync = oldsync
+    sock.flush # for immediate call of write(2)
   end
 
   # watcher thread callback
